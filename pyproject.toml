@@ -1,16 +1,19 @@
 [tool.poetry]
-name = 'build-and-run'
+name = 'bb'
 description = 'Build and run executable targets from cmake build dirs'
 readme = 'README.md'
 authors = ["ben.leadbetter"]
-packages = [{ include = "build_and_run" }]
+packages = [{ include = "bb" }]
 version = '0.1.0'
 
 [tool.poetry.scripts]
-build-and-run = 'build_and_run.main:main'
+bb = 'bb.main:main'
 
 [tool.poetry.dependencies]
 python = '>=3.11,<3.14'
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.2"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

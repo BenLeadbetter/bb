@@ -2,7 +2,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 def get_version() -> str:
     try:
-        return version('build-and-run')
+        return version('bb')
     except PackageNotFoundError:
         return "dev"
 
