@@ -39,8 +39,10 @@ def run(args, unknown_args):
     for i, line in enumerate(lines):
         if "input: phony" in line and i + 1 < len(lines):
             cmd = lines[i + 1].strip()
+            if not is_executable(cmd):
+                eprint(f"{cmd} is not executable")
+                sys.exit(1)
             subprocess.run([cmd] + unknown_args)
-
 
 
 def detect_generator() -> typing.Optional[str]:
@@ -102,9 +104,11 @@ def make_parser() -> argparse.ArgumentParser:
     )
     return parser
 
+def is_executable(file_path: str) -> bool:
+    return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
 
 def eprint(text: str):
-    print(f"\033[91mError(bb): {text}\033[0m", file=sys.stderr)
+    print(f"\033[91mError: {text}\033[0m", file=sys.stderr)
 
 
 if __name__ == "__main__":
