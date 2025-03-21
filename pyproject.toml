@@ -1,0 +1,17 @@
+[tool.poetry]
+name = 'build-and-run'
+description = 'Build and run executable targets from cmake build dirs'
+readme = 'README.md'
+authors = ["ben.leadbetter"]
+packages = [{ include = "build_and_run" }]
+version = '0.1.0'
+
+[tool.poetry.scripts]
+build-and-run = 'build_and_run.main:main'
+
+[tool.poetry.dependencies]
+python = '>=3.11,<3.14'
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
