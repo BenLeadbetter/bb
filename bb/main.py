@@ -13,6 +13,10 @@ def main():
     generator = detect_generator()
     validate_generater(generator)
 
+    if not args.build and not args.run:
+        eprint("Must specify --build or --run")
+        sys.exit(1)
+
     if args.build:
         build(args)
     if args.run:
@@ -92,16 +96,16 @@ def make_parser() -> argparse.ArgumentParser:
         "-r",
         action="store_true",
     )
-    parser.add_argument(
-        "--deploy-au",
-        "--au",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--deploy-vst3",
-        "--vst3",
-        action="store_true",
-    )
+    # parser.add_argument(
+    #     "--deploy-au",
+    #     "--au",
+    #     action="store_true",
+    # )
+    # parser.add_argument(
+    #     "--deploy-vst3",
+    #     "--vst3",
+    #     action="store_true",
+    # )
     return parser
 
 def is_executable(file_path: str) -> bool:
