@@ -5,7 +5,13 @@ import os
 import subprocess
 import sys
 import typing
+import signal
 
+def handle_interrupt(_signum, _frame):
+        eprint("Interrupted")
+        sys.exit(1)
+
+signal.signal(signal.SIGINT, handle_interrupt)
 
 def main():
     args, unknown_args = make_parser().parse_known_args()
