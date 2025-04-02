@@ -8,6 +8,7 @@ version = '0.1.0'
 
 [tool.poetry.scripts]
 bb = 'bb.main:main'
+ben-build = 'bb.main:main'
 
 [tool.poetry.dependencies]
 python = '>=3.11,<3.14'
