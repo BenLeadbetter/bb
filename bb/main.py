@@ -33,8 +33,15 @@ def main():
         build(args)
     if args.codesign:
         codesign(args)
+    if args.deploy:
+        deploy(args)
     if args.run:
         run(args, unknown_args)
+
+
+def deploy(args):
+    print("todo")
+    sys.exit(1)
 
 
 def codesign(args):
@@ -61,7 +68,6 @@ def codesign(args):
             eprint(f"Code signing failed for {path}")
             sys.exit(result.returncode)
         print(f"Codesigned {path}")
-
 
     if pathlib.Path(target).is_dir():
         for file in pathlib.Path(target).rglob("*.framework"):
@@ -229,16 +235,11 @@ def make_parser() -> argparse.ArgumentParser:
         "-r",
         action="store_true",
     )
-    # parser.add_argument(
-    #     "--deploy-au",
-    #     "--au",
-    #     action="store_true",
-    # )
-    # parser.add_argument(
-    #     "--deploy-vst3",
-    #     "--vst3",
-    #     action="store_true",
-    # )
+    parser.add_argument(
+        "--deploy",
+        "-d",
+        action="store_true",
+    )
     return parser
 
 
