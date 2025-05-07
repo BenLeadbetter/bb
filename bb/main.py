@@ -130,6 +130,7 @@ def make_parser() -> argparse.ArgumentParser:
     version = bb.__version__
     parser.add_argument(
         "target",
+        nargs="?",
         default="ALL",
     )
     parser.add_argument(
