@@ -9,6 +9,8 @@ import sys
 import typing
 import signal
 
+ALL_TARGETS = "ALL"
+
 
 def handle_interrupt(_signum, _frame):
     eprint("Interrupted")
@@ -43,7 +45,7 @@ def build(args):
     env = os.environ.copy()
     env["CMAKE_BUILD_PARALLEL_LEVEL"] = str(args.jobs)
     cmd = ["cmake", "--build", "."]
-    if args.target != "ALL":
+    if args.target != ALL_TARGETS:
         cmd.extend(["--target", args.target])
     if args.clean:
         cmd.append("--clean-first")
@@ -58,7 +60,7 @@ def build(args):
 
 
 def run(args, unknown_args):
-    if args.target == "All":
+    if args.target == ALL_TARGETS:
         eprint("No target specified to run")
         exit(1)
     cmd, cwd = run_cmd_from_cmake(args.target)
@@ -135,7 +137,7 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "target",
         nargs="?",
-        default="ALL",
+        default=ALL_TARGETS,
     )
     parser.add_argument(
         "--version",
