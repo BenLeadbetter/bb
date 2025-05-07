@@ -4,6 +4,7 @@ import argparse
 import glob
 import json
 import os
+import pathlib
 import subprocess
 import sys
 import typing
@@ -37,8 +38,37 @@ def main():
 
 
 def codesign(args):
-    eprint("todo")
-    sys.exit(1)
+    if sys.platform != "darwin":
+        eprint("Code signing is only supported on macOS")
+        return
+    target = signing_target(args.target)
+
+    def codesign(path: str):
+        result = subprocess.run(
+            [
+                "codesign",
+                "-s",
+                args.codesign,
+                target,
+            ],
+            text=True,
+            stderr=subprocess.PIPE,
+        )
+        if "already signed" in result.stderr:
+            print(f"{path} is already signed")
+            return
+        if result.returncode != 0:
+            eprint(f"Code signing failed for {path}")
+            sys.exit(result.returncode)
+        print(f"Codesigned {path}")
+
+
+    if pathlib.Path(target).is_dir():
+        for file in pathlib.Path(target).rglob("*.framework"):
+            codesign(str(file))
+        for file in pathlib.Path(target).rglob("*.dylib"):
+            codesign(str(file))
+    codesign(target)
 
 
 def build(args):
@@ -73,17 +103,33 @@ def run(args, unknown_args):
 RunCommand = typing.Tuple[str, typing.Optional[str]]
 
 
-def run_cmd_from_cmake(target) -> RunCommand:
+def signing_target(target) -> str:
     def handle_file(file):
-        data = json.load(file)
-        exec = data.get("artifacts", [{}])[0].get("path", None)
+        exec = get_executable_from_target_cmake_config_file(file)
         if exec is None:
             eprint(f"Could not find executable for {target}")
             sys.exit(1)
-        exec = os.getcwd() + "/" + exec
+        bundle = pathlib.Path(exec).parent.parent
+        if bundle.suffix not in [".app", ".vst3", ".component", ".aax"]:
+            return exec
+        return str(bundle)
+
+    target_config = get_target_cmake_config_filename(target)
+    if target_config is None:
+        eprint(f"Could not find target config file for {target}")
+        sys.exit(1)
+    return with_file(target_config, handle_file)
+
+
+def run_cmd_from_cmake(target) -> RunCommand:
+    def handle_file(file):
+        exec = get_executable_from_target_cmake_config_file(file)
+        if exec is None:
+            eprint(f"Could not find executable for {target}")
+            sys.exit(1)
         return (
             exec,
-            data.get("debugger", {}).get("workingDirectory", None),
+            get_executable_working_directory_from_target_cmake_config_file(file),
         )
 
     target_config = get_target_cmake_config_filename(target)
@@ -91,6 +137,17 @@ def run_cmd_from_cmake(target) -> RunCommand:
         eprint(f"Could not find target config file for {target}")
         sys.exit(1)
     return with_file(target_config, handle_file)
+
+
+def get_executable_from_target_cmake_config_file(file):
+    data = json.load(file)
+    exec = data.get("artifacts", [{}])[0].get("path", None)
+    return os.getcwd() + "/" + exec
+
+
+def get_executable_working_directory_from_target_cmake_config_file(file):
+    data = json.load(file)
+    return data.get("debugger", {}).get("workingDirectory", None)
 
 
 def get_target_cmake_config_filename(target_name: str) -> typing.Optional[str]:
