@@ -23,6 +23,8 @@ def main():
 
     if not args.build and not args.run and not args.codesign:
         args.build = True
+    if args.clean:
+        args.build = True
 
     if args.build:
         build(args)
@@ -43,6 +45,8 @@ def build(args):
     cmd = ["cmake", "--build", "."]
     if args.target != "ALL":
         cmd.extend(["--target", args.target])
+    if args.clean:
+        cmd.append("--clean-first")
     result = subprocess.run(
         cmd,
         text=True,
@@ -148,6 +152,11 @@ def make_parser() -> argparse.ArgumentParser:
         "--build",
         "-b",
         action="store_true",
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Clean build directory (implies --build)",
     )
     parser.add_argument(
         "--codesign",
