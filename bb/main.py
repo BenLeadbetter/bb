@@ -133,6 +133,7 @@ def run_cmd_from_cmake(target) -> RunCommand:
         if exec is None:
             eprint(f"Could not find executable for {target}")
             sys.exit(1)
+        file.seek(0)
         return (
             exec,
             get_executable_working_directory_from_target_cmake_config_file(file),
