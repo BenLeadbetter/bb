@@ -281,7 +281,7 @@ def make_parser() -> argparse.ArgumentParser:
         version=f"{os.path.basename(sys.argv[0])} {version}",
     )
     parser.add_argument(
-        "--jobs",
+        "--build-jobs",
         "-j",
         default="6",
     )
@@ -305,10 +305,9 @@ def make_parser() -> argparse.ArgumentParser:
         type=str,
         default=os.getenv("CODESIGN_KEY"),
         metavar="ID",
-        help="""
-The identity to be used in the codesign command, 
-or set the CODESIGN_KEY env variable
-""",
+        help="""The identity to be used in the codesign command, 
+            or set the CODESIGN_KEY env variable
+            """,
     )
     parser.add_argument(
         "--run",
