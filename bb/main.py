@@ -40,13 +40,77 @@ def main():
 
 
 def deploy(args):
-    print("todo")
-    sys.exit(1)
+    if args.target == ALL_TARGETS:
+        eprint("No target specified to deploy")
+        sys.exit(1)
+    print(f"Deploying ${args.target}")
+    if sys.platform == "darwin":
+        deploy_mac(args)
+    else:
+        eprint(f"Deploy not yet supported for ${sys.platform}")
+        sys.exit(1)
+
+
+def deploy_mac(args):
+    target = args.target
+
+    def handle_file(file):
+        exec = get_executable_from_target_cmake_config_file(file)
+        if exec is None:
+            eprint(f"Could not find executable for {target}")
+            sys.exit(1)
+        bundle = executable_bundle(pathlib.Path(exec))
+        if bundle is None:
+            eprint(f"Could not find bundle to deploy {target}")
+            sys.exit(1)
+        destination = pathlib.Path("/")
+        if bundle.suffix == ".app":
+            destination /= "Applications/" + bundle.name
+        elif bundle.suffix == ".vst3":
+            destination /= "Library/Audio/Plug-Ins/VST3/" + bundle.name
+        elif bundle.suffix == ".component":
+            destination /= "Library/Audio/Plug-Ins/Components/" + bundle.name
+        else:
+            eprint(f"Deploy not yet supported for ${bundle.suffix}")
+            sys.exit(1)
+        if destination.exists():
+            result = subprocess.run(
+                [
+                    "sudo",
+                    "rm",
+                    "-rf",
+                    destination,
+                ],
+            )
+            if result.returncode != 0:
+                eprint(f"Couldn't delete existing app ${destination}")
+                sys.exit(result.returncode)
+        result = subprocess.run(
+            [
+                "sudo",
+                "cp",
+                "-r",
+                bundle,
+                destination,
+            ],
+        )
+        if result.returncode != 0:
+            eprint(f"Error deploying ${destination}")
+            sys.exit(result.returncode)
+
+    target_config = get_target_cmake_config_filename(target)
+    if target_config is None:
+        eprint(f"Could not find target config file for {target}")
+        sys.exit(1)
+    return with_file(target_config, handle_file)
 
 
 def codesign(args):
     if sys.platform != "darwin":
         eprint("Code signing is only supported on macOS")
+        return
+    if args.codesign_identity is None:
+        eprint("No codesign identity provided.")
         return
     target = signing_target(args.target)
 
@@ -55,7 +119,7 @@ def codesign(args):
             [
                 "codesign",
                 "-s",
-                args.codesign,
+                args.codesign_identity,
                 target,
             ],
             text=True,
@@ -115,8 +179,8 @@ def signing_target(target) -> str:
         if exec is None:
             eprint(f"Could not find executable for {target}")
             sys.exit(1)
-        bundle = pathlib.Path(exec).parent.parent
-        if bundle.suffix not in [".app", ".vst3", ".component", ".aax"]:
+        bundle = executable_bundle(pathlib.Path(exec))
+        if bundle is None:
             return exec
         return str(bundle)
 
@@ -125,6 +189,13 @@ def signing_target(target) -> str:
         eprint(f"Could not find target config file for {target}")
         sys.exit(1)
     return with_file(target_config, handle_file)
+
+
+def executable_bundle(exec_path: pathlib.Path) -> typing.Optional[pathlib.Path]:
+    bundle = exec_path.parent.parent.parent
+    if bundle.suffix not in [".app", ".vst3", ".component", ".aax"]:
+        return None
+    return bundle
 
 
 def run_cmd_from_cmake(target) -> RunCommand:
@@ -227,12 +298,15 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--codesign",
         "-s",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--codesign-identity",
         type=str,
         default=os.getenv("CODESIGN_KEY"),
         metavar="ID",
         help="""
-Codesign the target. 
-Pass the keychain id to be used in the codesign command, 
+The identity to be used in the codesign command, 
 or set the CODESIGN_KEY env variable
 """,
     )
