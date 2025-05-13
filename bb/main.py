@@ -228,8 +228,13 @@ def make_parser() -> argparse.ArgumentParser:
         "--codesign",
         "-s",
         type=str,
-        default=None,
+        default=os.getenv("CODESIGN_KEY"),
         metavar="ID",
+        help="""
+Codesign the target. 
+Pass the keychain id to be used in the codesign command, 
+or set the CODESIGN_KEY env variable
+""",
     )
     parser.add_argument(
         "--run",
