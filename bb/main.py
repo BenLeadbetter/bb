@@ -108,10 +108,10 @@ def deploy_mac(args):
 def codesign(args):
     if sys.platform != "darwin":
         eprint("Code signing is only supported on macOS")
-        return
+        sys.exit(1)
     if args.codesign_identity is None:
         eprint("No codesign identity provided.")
-        return
+        sys.exit(1)
     target = signing_target(args.target)
 
     def codesign(path: str):
