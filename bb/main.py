@@ -43,11 +43,11 @@ def deploy(args):
     if args.target == ALL_TARGETS:
         eprint("No target specified to deploy")
         sys.exit(1)
-    print(f"Deploying ${args.target}")
+    print(f"Deploying {args.target}")
     if sys.platform == "darwin":
         deploy_mac(args)
     else:
-        eprint(f"Deploy not yet supported for ${sys.platform}")
+        eprint(f"Deploy not yet supported for {sys.platform}")
         sys.exit(1)
 
 
