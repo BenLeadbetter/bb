@@ -7,8 +7,9 @@ import os
 import pathlib
 import subprocess
 import sys
-import typing
+import shutil
 import signal
+import typing
 
 ALL_TARGETS = "ALL"
 
@@ -71,32 +72,21 @@ def deploy_mac(args):
         elif bundle.suffix == ".component":
             destination /= "Library/Audio/Plug-Ins/Components/" + bundle.name
         else:
-            eprint(f"Deploy not yet supported for ${bundle.suffix}")
+            eprint(f"Deploy not yet supported for {bundle.suffix}")
             sys.exit(1)
-        if destination.exists():
-            result = subprocess.run(
-                [
-                    "sudo",
-                    "rm",
-                    "-rf",
-                    destination,
-                ],
-            )
-            if result.returncode != 0:
-                eprint(f"Couldn't delete existing app ${destination}")
-                sys.exit(result.returncode)
-        result = subprocess.run(
-            [
-                "sudo",
-                "cp",
-                "-r",
-                bundle,
-                destination,
-            ],
-        )
-        if result.returncode != 0:
-            eprint(f"Error deploying ${destination}")
-            sys.exit(result.returncode)
+
+        if os.path.exists(destination):
+            try:
+                shutil.rmtree(destination)
+            except Exception as e:
+                eprint(f"Couldn't delete existing app {destination}: {e}")
+                sys.exit(1)
+
+        try:
+            shutil.copytree(bundle, destination)
+        except Exception as e:
+            eprint(f"Couldn't copy app to {destination}: {e}")
+            sys.exit(1)
 
     target_config = get_target_cmake_config_filename(target)
     if target_config is None:
