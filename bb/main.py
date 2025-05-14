@@ -143,7 +143,7 @@ def codesign(args):
 
 def build(args):
     env = os.environ.copy()
-    env["CMAKE_BUILD_PARALLEL_LEVEL"] = str(args.jobs)
+    env["CMAKE_BUILD_PARALLEL_LEVEL"] = str(args.build_jobs)
     cmd = ["cmake", "--build", "."]
     if args.target != ALL_TARGETS:
         cmd.extend(["--target", args.target])
