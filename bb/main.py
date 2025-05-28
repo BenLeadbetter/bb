@@ -45,21 +45,14 @@ def deploy(args):
         eprint("No target specified to deploy")
         sys.exit(1)
     print(f"Deploying {args.target}")
-    if sys.platform == "darwin":
-        deploy_mac(args)
-    else:
+    if sys.platform != "darwin":
         eprint(f"Deploy not yet supported for {sys.platform}")
         sys.exit(1)
 
-
-def deploy_mac(args):
     target = args.target
 
     def handle_file(file):
         exec = get_executable_from_target_cmake_config_file(file)
-        if exec is None:
-            eprint(f"Could not find executable for {target}")
-            sys.exit(1)
         bundle = executable_bundle(pathlib.Path(exec))
         if bundle is None:
             eprint(f"Could not find bundle to deploy {target}")
@@ -89,18 +82,17 @@ def deploy_mac(args):
             sys.exit(1)
 
     target_config = get_target_cmake_config_filename(target)
-    if target_config is None:
-        eprint(f"Could not find target config file for {target}")
-        sys.exit(1)
     return with_file(target_config, handle_file)
-
 
 def codesign(args):
     if sys.platform != "darwin":
         eprint("Code signing is only supported on macOS")
         sys.exit(1)
     if args.codesign_identity is None:
-        eprint("No codesign identity provided.")
+        eprint("""
+            No codesign identity provided.
+            Specify --codesign-identity or set the CODESIGN_KEY environment variable.
+        """)
         sys.exit(1)
     target = signing_target(args.target)
 
@@ -110,7 +102,7 @@ def codesign(args):
                 "codesign",
                 "-s",
                 args.codesign_identity,
-                target,
+                path,
             ],
             text=True,
             stderr=subprocess.PIPE,
@@ -166,18 +158,12 @@ RunCommand = typing.Tuple[str, typing.Optional[str]]
 def signing_target(target) -> str:
     def handle_file(file):
         exec = get_executable_from_target_cmake_config_file(file)
-        if exec is None:
-            eprint(f"Could not find executable for {target}")
-            sys.exit(1)
         bundle = executable_bundle(pathlib.Path(exec))
         if bundle is None:
             return exec
         return str(bundle)
 
     target_config = get_target_cmake_config_filename(target)
-    if target_config is None:
-        eprint(f"Could not find target config file for {target}")
-        sys.exit(1)
     return with_file(target_config, handle_file)
 
 
@@ -191,9 +177,6 @@ def executable_bundle(exec_path: pathlib.Path) -> typing.Optional[pathlib.Path]:
 def run_cmd_from_cmake(target) -> RunCommand:
     def handle_file(file):
         exec = get_executable_from_target_cmake_config_file(file)
-        if exec is None:
-            eprint(f"Could not find executable for {target}")
-            sys.exit(1)
         file.seek(0)
         return (
             exec,
@@ -201,15 +184,15 @@ def run_cmd_from_cmake(target) -> RunCommand:
         )
 
     target_config = get_target_cmake_config_filename(target)
-    if target_config is None:
-        eprint(f"Could not find target config file for {target}")
-        sys.exit(1)
     return with_file(target_config, handle_file)
 
 
-def get_executable_from_target_cmake_config_file(file):
+def get_executable_from_target_cmake_config_file(file) -> str:
     data = json.load(file)
     exec = data.get("artifacts", [{}])[0].get("path", None)
+    if exec is None:
+        eprint(f"Could not find executable from {file}")
+        sys.exit(1)
     return os.getcwd() + "/" + exec
 
 
@@ -218,7 +201,7 @@ def get_executable_working_directory_from_target_cmake_config_file(file):
     return data.get("debugger", {}).get("workingDirectory", None)
 
 
-def get_target_cmake_config_filename(target_name: str) -> typing.Optional[str]:
+def get_target_cmake_config_filename(target_name: str) -> str:
     def handle_file(file):
         data = json.load(file)
         targets = data.get("configurations", [{}])[0].get("targets", [{}])
@@ -232,7 +215,8 @@ def get_target_cmake_config_filename(target_name: str) -> typing.Optional[str]:
 
     config = glob.glob("codemodel-v2-*", root_dir=".cmake/api/v1/reply/")
     if not config:
-        return None
+        eprint(f"Could not find target config file for {target_name}")
+        sys.exit(1)
     # use the first match
     return with_file(".cmake/api/v1/reply/" + config[0], handle_file)
 
