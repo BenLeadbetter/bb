@@ -30,6 +30,7 @@ def main():
     if args.clean:
         args.build = True
 
+    init()
     if args.build:
         build(args)
     if args.codesign:
@@ -39,6 +40,14 @@ def main():
     if args.run:
         run(args, unknown_args)
 
+def init():
+    if not os.path.isfile("CMakeCache.txt"):
+        eprint("Expected to be run from a cmake build directory")
+        sys.exit(1)
+    if not os.path.isfile(".cmake/api/v1/query/codemodel-v2"):
+        return
+    os.makedirs(".cmake/api/v1/query", exist_ok=True)
+    open(".cmake/api/v1/query/codemodel-v2", 'a')
 
 def deploy(args):
     if args.target == ALL_TARGETS:
@@ -216,6 +225,7 @@ def get_target_cmake_config_filename(target_name: str) -> str:
     config = glob.glob("codemodel-v2-*", root_dir=".cmake/api/v1/reply/")
     if not config:
         eprint(f"Could not find target config file for {target_name}")
+        print("Try rerunning cmake configure")
         sys.exit(1)
     # use the first match
     return with_file(".cmake/api/v1/reply/" + config[0], handle_file)
