@@ -31,6 +31,7 @@ def main():
         args.build = True
 
     init()
+
     if args.build:
         build(args)
     if args.codesign:
@@ -44,7 +45,7 @@ def init():
     if not os.path.isfile("CMakeCache.txt"):
         eprint("Expected to be run from a cmake build directory")
         sys.exit(1)
-    if not os.path.isfile(".cmake/api/v1/query/codemodel-v2"):
+    if os.path.isfile(".cmake/api/v1/query/codemodel-v2"):
         return
     os.makedirs(".cmake/api/v1/query", exist_ok=True)
     open(".cmake/api/v1/query/codemodel-v2", 'a')
