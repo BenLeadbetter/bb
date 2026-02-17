@@ -25,7 +25,7 @@ signal.signal(signal.SIGINT, handle_interrupt)
 def main():
     args, unknown_args = make_parser().parse_known_args()
 
-    if not args.build and not args.run and not args.codesign:
+    if not args.build and not args.run and not args.codesign and not args.deploy:
         args.build = True
     if args.clean:
         args.build = True
